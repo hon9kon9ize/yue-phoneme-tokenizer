@@ -1,0 +1,6 @@
+ToJyutping==3.2.0
+cn2an
+pycantonese
+g2p_en
+inflect
+fastlid
