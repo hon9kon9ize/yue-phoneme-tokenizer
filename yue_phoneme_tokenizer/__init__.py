@@ -1,3 +1,4 @@
+from version import __version__
 from .tokenizer import PhonemeTokenizer, PhonemeTokenizerOutput
 from .yue_tokenizer import CantonesePhonemeTokenizer
 from .en_tokenizer import EnglishPhonemeTokenizer
