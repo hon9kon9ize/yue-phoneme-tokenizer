@@ -6,48 +6,6 @@ from fastlid import fastlid, supported_langs
 Language = Literal["yue", "en"]
 
 
-def markup_language(text: str, target_languages: list = None) -> str:
-    pattern = (
-        r"[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`"
-        r"\！？。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」"
-        r"『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+"
-    )
-    sentences = re.split(pattern, text)
-
-    pre_lang = ""
-    p = 0
-
-    if target_languages is not None:
-        sorted_target_languages = sorted(target_languages)
-        if sorted_target_languages in [["en", "zh"], ["en", "ja"], ["en", "ja", "zh"]]:
-            new_sentences = []
-            for sentence in sentences:
-                new_sentences.extend(split_alpha_nonalpha(sentence))
-            sentences = new_sentences
-
-    for sentence in sentences:
-        if check_is_none(sentence):
-            continue
-
-        lang = classify_language(sentence, target_languages)
-
-        if pre_lang == "":
-            text = text[:p] + text[p:].replace(
-                sentence, f"[{lang.upper()}]{sentence}", 1
-            )
-            p += len(f"[{lang.upper()}]")
-        elif pre_lang != lang:
-            text = text[:p] + text[p:].replace(
-                sentence, f"[{pre_lang.upper()}][{lang.upper()}]{sentence}", 1
-            )
-            p += len(f"[{pre_lang.upper()}][{lang.upper()}]")
-        pre_lang = lang
-        p += text[p:].index(sentence) + len(sentence)
-    text += f"[{pre_lang.upper()}]"
-
-    return text
-
-
 def extract_language_and_text_updated(dialogue: str) -> List[str]:
     # 使用正则表达式匹配<语言>标签和其后的文本
     pattern_language_text = r"<(\S+?)>([^<]+)"
@@ -149,6 +107,7 @@ class MultilingualTokenizer(PhonemeTokenizer):
         self._tokenizers = {}
         self.languages = languages
         vocab_dict = {}
+        sorted(self.languages)  # sort the languages to ensure consistent order
 
         for lang in languages:
             if lang == "yue":
@@ -173,16 +132,20 @@ class MultilingualTokenizer(PhonemeTokenizer):
         languages_text = "|".join(self.languages)
         return bool(re.search(rf"<{languages_text}>", text))
 
-    def tokenize(self, text: str) -> PhonemeTokenizerOutput:
+    def tokenize(self, text: str, language: Language = None) -> PhonemeTokenizerOutput:
+        if language is not None:
+            assert language in self.languages, f"Unsupported language: {language}"
+
+            outputs = self._tokenizers[language].tokenize(text)
+
         if self._contains_lang_markup(text):
             slices = self._language_markup_tokenize(text)
             input_ids = []
             word2ph = []
 
-            for slice in slices:
-                lang, text = slice
-                tokenizer = self._tokenizers[lang]
-                output = tokenizer.tokenize(text)
+            for _slice in slices:
+                lang, text = _slice
+                output = self._tokenizers[lang].tokenize(text)
                 input_ids.extend(output.tokens)
                 word2ph.extend(output.word2ph)
 
@@ -195,8 +158,8 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
     def _language_markup_tokenize(self, text: str) -> PhonemeTokenizerOutput:
         result = []
-        for slice in extract_language_and_text_updated(text):
-            result.append(slice)
+        for _slice in extract_language_and_text_updated(text):
+            result.append(_slice)
 
         return result
 
@@ -206,8 +169,7 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
         for sentence in sentences:
             sentence_text, lang = sentence
-            tokenizer = self._tokenizers[lang]
-            output = tokenizer.tokenize(sentence_text)
+            output = self._tokenizers[lang].tokenize(sentence_text)
             outputs.append(output)
 
         tokens = []
@@ -222,6 +184,9 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
 if __name__ == "__main__":
     tokenizer = MultilingualTokenizer(["yue", "en"])
+
+    print(tokenizer.vocab_dict)
+
     input_text = "我係一個學生，我學緊English。"
     auto_output = tokenizer.tokenize(input_text)
 
@@ -231,8 +196,46 @@ if __name__ == "__main__":
     print(auto_output.word2ph)  # [2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 6, 1]
 
     markup_input = "<yue>我係一個學生，我學緊 <en>English。"
-    markup_output = tokenizer.tokenize(
-        markup_input
-    )  # [83, 311, 42, 174, 43, 205, 27, 309, 42, 348, 91, 145, 532, 83, 311, 42, 348, 26, 188, 535, 68, 9, 11, 70, 24, 71, 533]
+    markup_output = tokenizer.tokenize(markup_input)
+
+    print("markup_output", markup_output)
+
+    test_encode_output = tokenizer.encode(markup_input)
+
+    print("test_encode_output", test_encode_output)
 
     assert "".join(auto_output.tokens) == "".join(markup_output.tokens)
+
+    token_outputs = tokenizer.ids_to_tokens(
+        [
+            83,
+            311,
+            42,
+            174,
+            43,
+            205,
+            27,
+            309,
+            42,
+            348,
+            91,
+            145,
+            532,
+            83,
+            311,
+            42,
+            348,
+            26,
+            188,
+            525,
+            466,
+            468,
+            527,
+            481,
+            528,
+            533,
+        ]
+    )
+
+    print(token_outputs, markup_output.tokens)
+    assert token_outputs == markup_output.tokens

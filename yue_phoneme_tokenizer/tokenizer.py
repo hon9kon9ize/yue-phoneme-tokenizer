@@ -152,7 +152,7 @@ class PhonemeTokenizer:
         Returns:
             List[int]: A list of phoneme token IDs.
         """
-        return [self.vocab_dict[token] + 1 for token in tokens]  # +1 for UNK token
+        return [self.vocab_dict[token] for token in tokens]
 
     def ids_to_tokens(self, token_ids: List[int]) -> List[str]:
         """

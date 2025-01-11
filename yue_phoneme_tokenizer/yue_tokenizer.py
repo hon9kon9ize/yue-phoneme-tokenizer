@@ -81,8 +81,8 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
     def __init__(self, return_punctuation: bool = True):
         initial_finals = [
             p + str(i)
-            for p in YUE_INITIALS.split(" ") + YUE_FINALS.split(" ")
-            for i in range(1, 7)
+            for p in YUE_INITIALS.split(" ") + YUE_FINALS.split(" ")  # initial + final
+            for i in range(1, 7)  # tone 1-6
         ]
 
         super().__init__(initial_finals, return_punctuation)

@@ -347,8 +347,63 @@ class EnglishPhonemeTokenizer(PhonemeTokenizer):
 
 if __name__ == "__main__":
     tokenizer = EnglishPhonemeTokenizer()
-    input_text = "I am a student. I got £100 in my pocket."
-    output = tokenizer.tokenize(input_text)
-    token_ids = tokenizer.encode(input_text)
 
-    print(output, token_ids)
+    print(tokenizer.vocab_dict)
+
+    test_text_input = "I am a student. I got £100 in my pocket."
+    test_text_output = tokenizer.tokenize(test_text_input)
+
+    print(test_text_output)
+
+    test_token_ids_output = tokenizer.encode(test_text_input)
+
+    print(test_token_ids_output)
+
+    text_token_ids_input = [
+        56,
+        65,
+        14,
+        2,
+        3,
+        30,
+        36,
+        61,
+        2,
+        27,
+        30,
+        77,
+        56,
+        12,
+        31,
+        30,
+        28,
+        4,
+        27,
+        60,
+        4,
+        27,
+        61,
+        46,
+        2,
+        61,
+        55,
+        39,
+        27,
+        61,
+        37,
+        25,
+        27,
+        14,
+        56,
+        55,
+        31,
+        26,
+        2,
+        30,
+        77,
+    ]
+    text_token_ids_output = tokenizer.ids_to_tokens(text_token_ids_input)
+
+    print(text_token_ids_output)
+
+    assert text_token_ids_output == test_text_output.tokens
