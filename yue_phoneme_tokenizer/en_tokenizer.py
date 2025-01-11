@@ -184,8 +184,7 @@ class EnglishPhonemeTokenizer(PhonemeTokenizer):
     ]
 
     def __init__(self, return_punctuation: bool = True):
-        phoneme_dict = {phn: i for i, phn in enumerate(EN_ARPA.split(" "))}
-        super().__init__(phoneme_dict, return_punctuation)
+        super().__init__(EN_ARPA.split(" "), return_punctuation)
 
         self.eng_dict = get_dict()
         self.g2p = G2p()
@@ -271,9 +270,9 @@ class EnglishPhonemeTokenizer(PhonemeTokenizer):
     def _post_replace_ph(self, ph):
         if ph in post_rep_map.keys():
             ph = rep_map[ph]
-        if ph in self.phoneme_dict:
+        if ph in self.vocab_dict:
             return ph
-        if ph not in self.phoneme_dict:
+        if ph not in self.vocab_dict:
             ph = self.unk_token
         return ph
 
@@ -326,7 +325,7 @@ class EnglishPhonemeTokenizer(PhonemeTokenizer):
                     phone_list = list(filter(lambda p: p != " ", self.g2p(w)))
                     phns = []
                     for ph in phone_list:
-                        if ph in self.phoneme_dict:
+                        if ph in self.vocab_dict:
                             phns.append(ph)
                         else:
                             phns.append(ph)

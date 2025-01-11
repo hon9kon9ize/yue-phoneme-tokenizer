@@ -1,7 +1,13 @@
-from yue_phoneme_tokenizer.tokenizer import PhonemeTokenizer, PhonemeTokenizerOutput
+from yue_phoneme_tokenizer.tokenizer import (
+    PhonemeTokenizer,
+    PhonemeTokenizerOutput,
+    PhonemeTokenizerEncodedOutput,
+)
 import re
+from dataclasses import dataclass
 import unicodedata
 from ToJyutping import get_jyutping_list
+from typing import List
 import pycantonese
 import cn2an
 
@@ -61,6 +67,12 @@ rep_map = {
 }
 
 
+@dataclass
+class WordJyutpingPair:
+    word: str | None
+    jyutping: str
+
+
 class CantonesePhonemeTokenizer(PhonemeTokenizer):
     """
     A tokenizer for converting Cantonese text into phonemes using Jyutping romanization.
@@ -72,24 +84,33 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
             for p in YUE_INITIALS.split(" ") + YUE_FINALS.split(" ")
             for i in range(1, 7)
         ]
-        phoneme_dict = {phn: i for i, phn in enumerate(initial_finals)}
 
-        super().__init__(phoneme_dict, return_punctuation)
+        super().__init__(initial_finals, return_punctuation)
 
     def _g2p(self, text: str):
         """
         Converts Cantonese text into a list of phonemes and their corresponding word lengths.
         You can change the implementation of this method if you want to use a different Jyutping converter.
         """
-        return get_jyutping_list(text)
+        word_jyutping = get_jyutping_list(text)
+        word_jyutping_paris = []
 
-    def _tokenize(self, text: str) -> PhonemeTokenizerOutput:
-        jyutping_list = self._g2p(text)
+        for word, jyutping in word_jyutping:
+            word_jyutping_paris.append(WordJyutpingPair(word, jyutping))
+
+        return word_jyutping_paris
+
+    def _tokenize_jyutping(
+        self, jyutping_list: List[WordJyutpingPair]
+    ) -> PhonemeTokenizerOutput:
         ph2word_idx = []
         phones = []
         word_len = len(jyutping_list)
 
-        for i, (word, phone) in enumerate(jyutping_list):
+        for i, pair in enumerate(jyutping_list):
+            word = pair.word
+            phone = pair.jyutping
+
             if phone is None:
                 if not self.return_punctuation:
                     continue
@@ -129,7 +150,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
                     phone_len += 1
 
                 if final != "":
-                    if final + tone not in self.phoneme_dict:
+                    if final + tone not in self.vocab_dict:
                         tokens.append("UNK")
                     else:
                         tokens.append(final + tone)
@@ -140,9 +161,17 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
             except ValueError:
                 tokens.append(phone)
 
+        return PhonemeTokenizerOutput(tokens, word2ph)
+
+    def _tokenize(self, text: str) -> PhonemeTokenizerOutput:
+        jyutping_list = self._g2p(text)
+        temp_output = self._tokenize_jyutping(jyutping_list)
+        tokens = temp_output.tokens
+        word2ph = temp_output.word2ph
+
         assert len(tokens) == sum(word2ph), text
 
-        return PhonemeTokenizerOutput(tokens, word2ph)
+        return temp_output
 
     def _text_normalize(self, text: str):
         text = unicodedata.normalize("NFKC", text)
@@ -168,14 +197,69 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
         return text
 
+    def encode_jyutping(self, jyutping: str) -> PhonemeTokenizerEncodedOutput:
+        """
+        Encodes a given Jyutping string into a PhonemeTokenizerEncodedOutput.
+
+        Args:
+            jyutping (str): The Jyutping string to be encoded.
+
+        Returns:
+            PhonemeTokenizerEncodedOutput: The encoded output of the Jyutping string.
+        """
+        jyutping_list = []
+        for word in jyutping.split(" "):
+            jyutping_list.append(WordJyutpingPair(None, word))
+
+        token_outputs = self._tokenize_jyutping(jyutping_list)
+        word2ph = token_outputs.word2ph
+        token_ids = self.tokens_to_ids(token_outputs.tokens)
+
+        return PhonemeTokenizerEncodedOutput(token_ids=token_ids, word2ph=word2ph)
+
 
 if __name__ == "__main__":
     tokenizer = CantonesePhonemeTokenizer()
 
     print(tokenizer.get_vocab(), tokenizer.vocab_size)
 
-    input_text = "我唔係廿幾卅個香港人。"
-    output = tokenizer.tokenize(input_text)
-    token_ids = tokenizer.encode(input_text)
+    test_text_input = "我唔係廿幾卅個香港人。"
+    test_text_output = tokenizer.tokenize(test_text_input)
 
-    print(output, token_ids)
+    print("test_text_output", test_text_output)
+
+    test_encode_output = tokenizer.encode(test_text_input)
+
+    print("test_encode_output", test_encode_output)
+
+    test_jyutping_input = "ngo5 m4 hai6 jaa6 gei2 saa1 aa6 go3 hoeng1 gong2 jan4 ."
+    test_jyutping_output = tokenizer.encode_jyutping(test_jyutping_input)
+
+    print("test_jyutping_output", test_jyutping_output)
+
+    text_token_ids_input = [
+        83,
+        311,
+        442,
+        42,
+        174,
+        48,
+        120,
+        26,
+        224,
+        91,
+        115,
+        120,
+        27,
+        309,
+        37,
+        355,
+        26,
+        332,
+        46,
+        190,
+        455,
+    ]
+    text_token_ids_output = tokenizer.ids_to_tokens(text_token_ids_input)
+
+    assert text_token_ids_output == test_text_output.tokens

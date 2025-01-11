@@ -53,7 +53,7 @@ def extract_language_and_text_updated(dialogue: str) -> List[str]:
     pattern_language_text = r"<(\S+?)>([^<]+)"
     matches = re.findall(pattern_language_text, dialogue, re.DOTALL)
     # 清理文本：去除两边的空白字符
-    matches_cleaned = [(lang.upper(), text.strip()) for lang, text in matches]
+    matches_cleaned = [(lang.lower(), text.strip()) for lang, text in matches]
     return matches_cleaned
 
 
@@ -148,7 +148,7 @@ class MultilingualTokenizer(PhonemeTokenizer):
     def __init__(self, languages: List[Language], return_punctuation: bool = True):
         self._tokenizers = {}
         self.languages = languages
-        phoneme_dict = {}
+        vocab_dict = {}
 
         for lang in languages:
             if lang == "yue":
@@ -157,14 +157,14 @@ class MultilingualTokenizer(PhonemeTokenizer):
                 )
 
                 self._tokenizers[lang] = CantonesePhonemeTokenizer(return_punctuation)
-                phoneme_dict.update(self._tokenizers[lang].phoneme_dict)
+                vocab_dict.update(self._tokenizers[lang].vocab_dict)
             elif lang == "en":
                 from yue_phoneme_tokenizer.en_tokenizer import EnglishPhonemeTokenizer
 
                 self._tokenizers[lang] = EnglishPhonemeTokenizer(return_punctuation)
-                phoneme_dict.update(self._tokenizers[lang].phoneme_dict)
+                vocab_dict.update(self._tokenizers[lang].vocab_dict)
 
-        super().__init__(phoneme_dict, return_punctuation)
+        super().__init__(vocab_dict, return_punctuation)
 
     def _split_by_language(self, text: str) -> List[str]:
         return split_by_language(text, self.languages)
@@ -222,7 +222,7 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
 if __name__ == "__main__":
     tokenizer = MultilingualTokenizer(["yue", "en"])
-    input_text = "我係一個學生，我學緊 English。"
+    input_text = "我係一個學生，我學緊English。"
     auto_output = tokenizer.tokenize(input_text)
 
     print(
@@ -230,9 +230,9 @@ if __name__ == "__main__":
     )  # ['ng5', 'o5', 'h6', 'ai6', 'j1', 'at1', 'g3', 'o3', 'h6', 'ok6', 's1', 'aang1', ',', 'ng5', 'o5', 'h6', 'ok6', 'g2', 'an2', ' ', 'IH1', 'NG', 'G', 'L', 'IH0', 'SH', '.']
     print(auto_output.word2ph)  # [2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 6, 1]
 
-    markup_input = "<yue>我係一個學生，我學緊<en>English。"
+    markup_input = "<yue>我係一個學生，我學緊 <en>English。"
     markup_output = tokenizer.tokenize(
         markup_input
     )  # [83, 311, 42, 174, 43, 205, 27, 309, 42, 348, 91, 145, 532, 83, 311, 42, 348, 26, 188, 535, 68, 9, 11, 70, 24, 71, 533]
 
-    assert auto_output.tokens == markup_output.tokens
+    assert "".join(auto_output.tokens) == "".join(markup_output.tokens)

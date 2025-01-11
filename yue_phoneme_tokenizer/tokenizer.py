@@ -33,13 +33,13 @@ class PhonemeTokenizerEncodedOutput:
 
     Attributes:
     ----------
-    input_ids: List[int]
+    token_ids: List[int]
         A list of phoneme token ids.
     word2ph : List[int]
         A list mapping word indices to phoneme indices.
     """
 
-    input_ids: List[int]
+    token_ids: List[int]
     word2ph: List[int]
 
 
@@ -49,7 +49,7 @@ class PhonemeTokenizer:
 
     Attributes:
         punctuation (set): A set of punctuation characters to be considered during tokenization.
-        phoneme_dict (List[str]): A list of phonemes used for tokenization.
+        vocab (List[str]): A list of phonemes used for tokenization.
 
     Methods:
         normalize(text) -> str:
@@ -67,26 +67,31 @@ class PhonemeTokenizer:
     punctuation = PUNCTUATION
     unk_token = "UNK"
 
-    def __init__(self, phoneme_dict: List[str], return_punctuation: bool = True):
-        self.phoneme_dict = phoneme_dict
+    def __init__(self, vocab: List[str], return_punctuation: bool = True):
+        self.vocab = (
+            [self.unk_token] + vocab if self.unk_token not in vocab else vocab
+        )  # prepend UNK token if not present
+        self.vocab_dict = {p: i for i, p in enumerate(self.vocab)}
+        self.id_vocab_map = {i: p for i, p in enumerate(self.vocab)}
         self.return_punctuation = return_punctuation
 
         if self.return_punctuation:
-            orig_dict_len = len(self.phoneme_dict)
+            orig_dict_len = len(self.vocab)
             # expand the phoneme dictionary to include punctuation
-            self.phoneme_dict = {
-                **self.phoneme_dict,
+            self.vocab_dict = {
+                **self.vocab_dict,
                 **{p: i + orig_dict_len for i, p in enumerate(self.punctuation)},
             }
+            self.id_vocab_map = {i: p for p, i in self.vocab_dict.items()}
 
-        dictionary_pattern = "|".join(map(re.escape, self.phoneme_dict.keys()))
+        dictionary_pattern = "|".join(map(re.escape, self.vocab_dict.keys()))
         self._phone_markup_regex = (
             r"([^\{\}]+)\{\s*("
             + f"(?:{dictionary_pattern})(?:\s+(?:{dictionary_pattern}))*"
             + r")\s*\}"
         )
 
-        if len(self.phoneme_dict) != len(set(self.phoneme_dict)):
+        if len(self.vocab_dict) != len(set(self.vocab_dict)):
             raise ValueError("Phoneme dictionary has duplicate entries.")
 
     def _tokenize(self, text: str) -> PhonemeTokenizerOutput:
@@ -137,6 +142,30 @@ class PhonemeTokenizer:
 
         return outputs
 
+    def tokens_to_ids(self, tokens: List[str]) -> List[int]:
+        """
+        Converts a list of phoneme tokens to their corresponding IDs.
+
+        Args:
+            tokens (List[str]): A list of phoneme tokens.
+
+        Returns:
+            List[int]: A list of phoneme token IDs.
+        """
+        return [self.vocab_dict[token] + 1 for token in tokens]  # +1 for UNK token
+
+    def ids_to_tokens(self, token_ids: List[int]) -> List[str]:
+        """
+        Converts a list of phoneme token IDs to their corresponding tokens.
+
+        Args:
+            token_ids (List[int]): A list of phoneme token IDs.
+
+        Returns:
+            List[str]: A list of phoneme tokens.
+        """
+        return [self.id_vocab_map[i] for i in token_ids]
+
     def encode(self, text: str) -> PhonemeTokenizerEncodedOutput:
         """
         Encodes the given text into a sequence of phoneme token IDs.
@@ -150,11 +179,9 @@ class PhonemeTokenizer:
         output = self.tokenize(text)
         tokens = output.tokens
         word2ph = output.word2ph
-        input_ids = [
-            self.phoneme_dict[token] + 1 for token in tokens
-        ]  # +1 for UNK token
+        token_ids = self.tokens_to_ids(tokens)
 
-        return PhonemeTokenizerEncodedOutput(input_ids=input_ids, word2ph=word2ph)
+        return PhonemeTokenizerEncodedOutput(token_ids=token_ids, word2ph=word2ph)
 
     @property
     def vocab_size(self) -> int:
@@ -164,7 +191,7 @@ class PhonemeTokenizer:
         Returns:
             int: The size of the phoneme vocabulary.
         """
-        return len(self.phoneme_dict) + 1
+        return len(self.vocab_dict) + 1
 
     def get_vocab(self):
         """
@@ -173,6 +200,4 @@ class PhonemeTokenizer:
         Returns:
             dict: A dictionary mapping phoneme tokens to their corresponding IDs.
         """
-        return [self.unk_token] + [
-            key for key in self.phoneme_dict.keys()
-        ]  # prepend UNK token
+        return self.vocab  # prepend UNK token
