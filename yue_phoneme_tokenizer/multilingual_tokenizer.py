@@ -107,7 +107,7 @@ def split_by_language(text: str, target_languages: list = None) -> list:
 
 
 class MultilingualTokenizer(PhonemeTokenizer):
-    def __init__(self, languages: List[Language], return_punctuation: bool = True):
+    def __init__(self, languages: List[Language], **kwargs: dict):
         self._tokenizers = {}
         self.languages = languages
         vocab_dict = {}
@@ -119,15 +119,15 @@ class MultilingualTokenizer(PhonemeTokenizer):
                     CantonesePhonemeTokenizer,
                 )
 
-                self._tokenizers[lang] = CantonesePhonemeTokenizer(return_punctuation)
+                self._tokenizers[lang] = CantonesePhonemeTokenizer(**kwargs)
                 vocab_dict.update(self._tokenizers[lang].vocab_dict)
             elif lang == "en":
                 from yue_phoneme_tokenizer.en_tokenizer import EnglishPhonemeTokenizer
 
-                self._tokenizers[lang] = EnglishPhonemeTokenizer(return_punctuation)
+                self._tokenizers[lang] = EnglishPhonemeTokenizer(**kwargs)
                 vocab_dict.update(self._tokenizers[lang].vocab_dict)
 
-        super().__init__(vocab_dict, return_punctuation)
+        super().__init__(vocab_dict, **kwargs)
 
     def _split_by_language(self, text: str) -> List[str]:
         return split_by_language(text, self.languages)

@@ -1,6 +1,7 @@
 import re
 from typing import List
 from dataclasses import dataclass
+from transformers import AutoTokenizer
 import logging
 
 PUNCTUATION = ["!", "?", "…", ",", ".", "-", " "]
@@ -67,7 +68,11 @@ class PhonemeTokenizer:
     punctuation = PUNCTUATION
     unk_token = "UNK"
 
-    def __init__(self, vocab: List[str], return_punctuation: bool = True):
+    def __init__(
+        self,
+        vocab: List[str],
+        return_punctuation: bool = True,
+    ):
         self.vocab = (
             [self.unk_token] + vocab if self.unk_token not in vocab else vocab
         )  # prepend UNK token if not present

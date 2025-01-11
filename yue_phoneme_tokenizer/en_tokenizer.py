@@ -183,8 +183,8 @@ class EnglishPhonemeTokenizer(PhonemeTokenizer):
         (re.compile("%s" % x[0]), x[1]) for x in [("r", "ɹ"), ("ʤ", "dʒ"), ("ʧ", "tʃ")]
     ]
 
-    def __init__(self, return_punctuation: bool = True):
-        super().__init__(EN_ARPA.split(" "), return_punctuation)
+    def __init__(self, **kwargs):
+        super().__init__(EN_ARPA.split(" "), **kwargs)
 
         self.eng_dict = get_dict()
         self.g2p = G2p()

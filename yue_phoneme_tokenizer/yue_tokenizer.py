@@ -78,14 +78,14 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
     A tokenizer for converting Cantonese text into phonemes using Jyutping romanization.
     """
 
-    def __init__(self, return_punctuation: bool = True):
+    def __init__(self, **kwargs):
         initial_finals = [
             p + str(i)
             for p in YUE_INITIALS.split(" ") + YUE_FINALS.split(" ")  # initial + final
             for i in range(1, 7)  # tone 1-6
         ]
 
-        super().__init__(initial_finals, return_punctuation)
+        super().__init__(initial_finals, **kwargs)
 
     def _g2p(self, text: str):
         """
