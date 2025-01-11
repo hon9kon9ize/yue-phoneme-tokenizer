@@ -4,5 +4,3 @@ pycantonese
 g2p_en
 inflect
 fastlid
-results
-transformers>=4.0.0
