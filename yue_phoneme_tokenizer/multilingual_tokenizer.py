@@ -146,7 +146,9 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
         return PhonemeTokenizerEncodedOutput(token_ids=token_ids, word2ph=word2ph)
 
-    def tokenize(self, text: str, language: Language = None) -> PhonemeTokenizerOutput:
+    def tokenize(
+        self, text: str, language: Language | None = None
+    ) -> PhonemeTokenizerOutput:
         if language is not None:
             assert language in self.languages, f"Unsupported language: {language}"
 

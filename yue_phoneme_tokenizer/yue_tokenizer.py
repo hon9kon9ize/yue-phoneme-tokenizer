@@ -181,11 +181,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
     def _text_normalize(self, text: str):
         text = unicodedata.normalize("NFKC", text)
-        pattern = re.compile(
-            "|".join(
-                re.escape(p) for p in list(chars_rep_map.keys()) + list(rep_map.keys())
-            )
-        )
+        pattern = re.compile("|".join(re.escape(p) for p in list(chars_rep_map.keys())))
         replaced_text = pattern.sub(lambda x: chars_rep_map[x.group()], text)
 
         replaced_text = "".join(
