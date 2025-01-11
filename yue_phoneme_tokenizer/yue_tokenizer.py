@@ -173,6 +173,12 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
         return temp_output
 
+    def _replace_punctuation(self, text):
+        pattern = re.compile("|".join(re.escape(p) for p in rep_map.keys()))
+        replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
+
+        return replaced_text
+
     def _text_normalize(self, text: str):
         text = unicodedata.normalize("NFKC", text)
         pattern = re.compile(
@@ -180,7 +186,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
                 re.escape(p) for p in list(chars_rep_map.keys()) + list(rep_map.keys())
             )
         )
-        replaced_text = pattern.sub(lambda x: rep_map[x.group()], text)
+        replaced_text = pattern.sub(lambda x: chars_rep_map[x.group()], text)
 
         replaced_text = "".join(
             c
@@ -193,6 +199,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
     def _normalize(self, text: str):
         text = cn2an.transform(text, "an2cn")
+        text = self._replace_punctuation(text)
         text = self._text_normalize(text)
 
         return text
