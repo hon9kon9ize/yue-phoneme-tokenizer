@@ -1,4 +1,8 @@
-from yue_phoneme_tokenizer.tokenizer import PhonemeTokenizer, PhonemeTokenizerOutput
+from yue_phoneme_tokenizer.tokenizer import (
+    PhonemeTokenizer,
+    PhonemeTokenizerOutput,
+    PhonemeTokenizerEncodedOutput,
+)
 import regex as re
 from typing import Literal, List
 from fastlid import fastlid, supported_langs
@@ -131,6 +135,16 @@ class MultilingualTokenizer(PhonemeTokenizer):
     def _contains_lang_markup(self, text: str) -> bool:
         languages_text = "|".join(self.languages)
         return bool(re.search(rf"<{languages_text}>", text))
+
+    def encode(
+        self, text: str, language: Language = None
+    ) -> PhonemeTokenizerEncodedOutput:
+        output = self.tokenize(text, language)
+        tokens = output.tokens
+        word2ph = output.word2ph
+        token_ids = self.tokens_to_ids(tokens)
+
+        return PhonemeTokenizerEncodedOutput(token_ids=token_ids, word2ph=word2ph)
 
     def tokenize(self, text: str, language: Language = None) -> PhonemeTokenizerOutput:
         if language is not None:
