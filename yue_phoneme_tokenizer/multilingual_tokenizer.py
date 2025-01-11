@@ -152,6 +152,8 @@ class MultilingualTokenizer(PhonemeTokenizer):
 
             outputs = self._tokenizers[language].tokenize(text)
 
+            return outputs
+
         if self._contains_lang_markup(text):
             slices = self._language_markup_tokenize(text)
             input_ids = []
