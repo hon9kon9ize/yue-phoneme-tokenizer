@@ -31,6 +31,9 @@ setup(
     ],
     keywords="cantonese g2p phoneme tokenizer",
     packages=find_packages(),
+    package_data={
+        "yue_phoneme_tokenizer": ["cmudict_cache.pickle", "cmudict.rep"],
+    },
     include_package_data=True,
     python_requires=">=3.8, <4",
     entry_points={},
