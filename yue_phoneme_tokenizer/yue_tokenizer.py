@@ -100,7 +100,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
         return word_jyutping_paris
 
-    def _tokenize_jyutping(
+    def tokenize_jyutping(
         self, jyutping_list: List[WordJyutpingPair]
     ) -> PhonemeTokenizerOutput:
         ph2word_idx = []
@@ -165,7 +165,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
 
     def _tokenize(self, text: str) -> PhonemeTokenizerOutput:
         jyutping_list = self._g2p(text)
-        temp_output = self._tokenize_jyutping(jyutping_list)
+        temp_output = self.tokenize_jyutping(jyutping_list)
         tokens = temp_output.tokens
         word2ph = temp_output.word2ph
 
@@ -214,7 +214,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
         for word in jyutping.split(" "):
             jyutping_list.append(WordJyutpingPair(None, word))
 
-        token_outputs = self._tokenize_jyutping(jyutping_list)
+        token_outputs = self.tokenize_jyutping(jyutping_list)
         word2ph = token_outputs.word2ph
         token_ids = self.tokens_to_ids(token_outputs.tokens)
 
