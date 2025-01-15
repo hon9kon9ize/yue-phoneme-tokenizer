@@ -56,36 +56,22 @@ def cut_sent(para: str):
 
 
 def classify_language(text: str, target_languages: list = None) -> str:
-    # naive classification
     # count chinese characters
     chinese_count = len(re.findall(r"[\u4e00-\u9fff]", text))
     # count latin characters
     latin_count = len(re.findall(r"[a-zA-Z]", text))
 
-    if chinese_count > latin_count:
-        lang = (
-            "yue"
-            if "yue" in target_languages
-            else "zh" if "zh" in target_languages else None
-        )
-    else:
-        lang = "en" if "en" in target_languages else None
-
-    return lang
+    return "yue" if chinese_count > (latin_count * 0.5) else "en"
 
 
 def split_by_language(text: str, target_languages: list = None) -> list:
-    pattern = (
-        r"[\!\"\#\$\%\&\'\(\)\*\+\,\-\.\/\:\;\<\>\=\?\@\[\]\{\}\\\\\^\_\`"
-        r"\！？\。＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､、〃》「」"
-        r"『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘\'\‛\“\”\„\‟…‧﹏.]+"
-    )
+    pattern = r"([a-zA-Z']+)"
     sentences = re.split(pattern, text)
-
-    pre_lang = ""
+    prev_lang = ""
     start = 0
     end = 0
     sentences_list = []
+    common_lang = classify_language(text, target_languages)
 
     if target_languages is not None:
         new_sentences = []
@@ -97,15 +83,18 @@ def split_by_language(text: str, target_languages: list = None) -> list:
         if check_is_none(sentence):
             continue
 
-        lang = classify_language(sentence, target_languages)
+        if re.search(r"[\s0-9]+", sentence):
+            lang = common_lang  # align to the common language
+        else:
+            lang = classify_language(sentence, target_languages)
 
         end += text[end:].index(sentence)
-        if pre_lang != "" and pre_lang != lang:
-            sentences_list.append((text[start:end], pre_lang))
+        if prev_lang != "" and prev_lang != lang:
+            sentences_list.append((text[start:end], prev_lang))
             start = end
         end += len(sentence)
-        pre_lang = lang
-    sentences_list.append((text[start:], pre_lang))
+        prev_lang = lang
+    sentences_list.append((text[start:], prev_lang))
 
     return sentences_list
 

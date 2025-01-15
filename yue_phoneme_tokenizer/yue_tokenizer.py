@@ -194,6 +194,7 @@ class CantonesePhonemeTokenizer(PhonemeTokenizer):
         return replaced_text
 
     def _normalize(self, text: str):
+        text = re.sub(r"(\d+),(\d+)", r"\1\2", text)  # remove comma in between numbers
         text = cn2an.transform(text, "an2cn")
         text = self._replace_punctuation(text)
         text = self._text_normalize(text)
