@@ -131,7 +131,8 @@ class MultilingualTokenizer(PhonemeTokenizer):
                 self._tokenizers[lang] = EnglishPhonemeTokenizer(**kwargs)
                 vocab.update(self._tokenizers[lang].vocab)
 
-        sorted(vocab)
+        # sort the vocab to ensure consistent order
+        vocab = sorted(vocab)
         vocab_dict = {p: i for i, p in enumerate(vocab)}
 
         super().__init__(vocab_dict, **kwargs)
