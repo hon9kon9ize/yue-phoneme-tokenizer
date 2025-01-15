@@ -3,4 +3,3 @@ cn2an
 pycantonese
 g2p_en
 inflect
-fastlid

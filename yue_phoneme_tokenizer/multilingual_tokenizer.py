@@ -5,7 +5,6 @@ from yue_phoneme_tokenizer.tokenizer import (
 )
 import regex as re
 from typing import Literal, List
-from fastlid import fastlid, supported_langs
 
 Language = Literal["yue", "en"]
 
@@ -57,15 +56,20 @@ def cut_sent(para: str):
 
 
 def classify_language(text: str, target_languages: list = None) -> str:
-    classifier = fastlid
+    # naive classification
+    # count chinese characters
+    chinese_count = len(re.findall(r"[\u4e00-\u9fff]", text))
+    # count latin characters
+    latin_count = len(re.findall(r"[a-zA-Z]", text))
 
-    if target_languages != None:
-        target_languages = [
-            lang for lang in target_languages if lang in supported_langs
-        ]
-        fastlid.set_languages = target_languages
-
-    lang = classifier(text)[0]
+    if chinese_count > latin_count:
+        lang = (
+            "yue"
+            if "yue" in target_languages
+            else "zh" if "zh" in target_languages else None
+        )
+    else:
+        lang = "en" if "en" in target_languages else None
 
     return lang
 
@@ -232,3 +236,5 @@ if __name__ == "__main__":
 
     print(token_outputs, markup_output.tokens)
     assert token_outputs == markup_output.tokens
+
+    print(tokenizer.encode("素素仲留低咗一个地址记得，系曼谷嘅吞母李府。").token_ids)
