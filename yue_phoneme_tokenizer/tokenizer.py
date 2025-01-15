@@ -196,7 +196,7 @@ class PhonemeTokenizer:
         Returns:
             int: The size of the phoneme vocabulary.
         """
-        return len(self.vocab_dict) + 1
+        return len(self.vocab_dict)
 
     def get_vocab(self):
         """

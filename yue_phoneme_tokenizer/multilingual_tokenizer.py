@@ -110,7 +110,7 @@ class MultilingualTokenizer(PhonemeTokenizer):
     def __init__(self, languages: List[Language], **kwargs: dict):
         self._tokenizers = {}
         self.languages = languages
-        vocab_dict = {}
+        vocab = set()
         sorted(self.languages)  # sort the languages to ensure consistent order
 
         for lang in languages:
@@ -120,12 +120,15 @@ class MultilingualTokenizer(PhonemeTokenizer):
                 )
 
                 self._tokenizers[lang] = CantonesePhonemeTokenizer(**kwargs)
-                vocab_dict.update(self._tokenizers[lang].vocab_dict)
+                vocab.update(self._tokenizers[lang].vocab)
             elif lang == "en":
                 from yue_phoneme_tokenizer.en_tokenizer import EnglishPhonemeTokenizer
 
                 self._tokenizers[lang] = EnglishPhonemeTokenizer(**kwargs)
-                vocab_dict.update(self._tokenizers[lang].vocab_dict)
+                vocab.update(self._tokenizers[lang].vocab)
+
+        sorted(vocab)
+        vocab_dict = {p: i for i, p in enumerate(vocab)}
 
         super().__init__(vocab_dict, **kwargs)
 
@@ -204,6 +207,7 @@ if __name__ == "__main__":
     tokenizer = MultilingualTokenizer(["yue", "en"])
 
     print(tokenizer.vocab_dict)
+    print(tokenizer.vocab_size)
 
     input_text = "我係一個學生，我學緊English。"
     auto_output = tokenizer.tokenize(input_text)
@@ -224,36 +228,7 @@ if __name__ == "__main__":
 
     assert "".join(auto_output.tokens) == "".join(markup_output.tokens)
 
-    token_outputs = tokenizer.ids_to_tokens(
-        [
-            83,
-            311,
-            42,
-            174,
-            43,
-            205,
-            27,
-            309,
-            42,
-            348,
-            91,
-            145,
-            532,
-            83,
-            311,
-            42,
-            348,
-            26,
-            188,
-            525,
-            466,
-            468,
-            527,
-            481,
-            528,
-            533,
-        ]
-    )
+    token_outputs = tokenizer.ids_to_tokens(test_encode_output.token_ids)
 
     print(token_outputs, markup_output.tokens)
     assert token_outputs == markup_output.tokens
