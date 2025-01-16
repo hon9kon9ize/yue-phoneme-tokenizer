@@ -5,7 +5,6 @@ from transformers import AutoTokenizer
 import logging
 
 PUNCTUATION = ["!", "?", "…", ",", ".", "-", " "]
-LID_MODEL_URL = "https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin"
 
 logger = logging.getLogger(__name__)
 
